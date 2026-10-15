@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Практическая работа. Модули БД-1, БД-2, БД-3</title>
+<style>
+  :root{
+    --ink:#1c2733; --muted:#5b6b7c; --line:#d7dee6; --bg:#fff;
+    --blue:#1f5fa8; --blue-bg:#eef5fd;
+    --amber:#8a5a00; --amber-bg:#fff6e5;
+    --red:#a01f1f; --red-bg:#fdeeee;
+    --green:#1c6b3f; --green-bg:#edf8f1;
+    --grey:#eef1f4;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:#f4f6f8; color:var(--ink);
+    font:16px/1.6 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  .page{max-width:900px;margin:0 auto;background:var(--bg);padding:32px 40px 64px;}
+  h1{font-size:28px;line-height:1.25;margin:0 0 6px;}
+  .subtitle{color:var(--muted);font-size:17px;margin:0 0 4px;}
+  .ver{color:var(--muted);font-size:13px;margin:0 0 26px;}
+  h2{font-size:23px;margin:44px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line);}
+  h3{font-size:19px;margin:30px 0 10px;}
+  h4{font-size:16px;margin:20px 0 8px;}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0 10px 22px;padding:0;}
+  li{margin:5px 0;}
+  code{background:var(--grey);padding:1px 5px;border-radius:4px;font-family:Consolas,"Courier New",monospace;font-size:14px;}
+  pre{
+    background:#1e2733;color:#e8eef5;padding:14px 16px;border-radius:8px;
+    overflow-x:auto;font-family:Consolas,"Courier New",monospace;font-size:13.5px;line-height:1.5;
+    white-space:pre;
+  }
+  pre code{background:none;color:inherit;padding:0;font-size:inherit;}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:var(--grey);font-weight:600;}
+  .box{border-radius:8px;padding:12px 16px;margin:16px 0;border-left:5px solid;}
+  .box p:first-child{margin-top:0}.box p:last-child{margin-bottom:0}
+  .box .t{font-weight:700;display:block;margin-bottom:4px;}
+  .rule{background:var(--red-bg);border-color:var(--red);}
+  .rule .t{color:var(--red)}
+  .warn{background:var(--amber-bg);border-color:var(--amber);}
+  .warn .t{color:var(--amber)}
+  .tip{background:var(--blue-bg);border-color:var(--blue);}
+  .tip .t{color:var(--blue)}
+  .check{background:var(--green-bg);border-color:var(--green);}
+  .check .t{color:var(--green)}
+  .step{background:#f7f9fb;border:1px solid var(--line);border-left:5px solid var(--blue);
+        border-radius:8px;padding:12px 16px;margin:16px 0;}
+  .step .t{font-weight:700;color:var(--blue);display:block;margin-bottom:6px;}
+  .toc{background:#f7f9fb;border:1px solid var(--line);border-radius:8px;padding:16px 22px;margin:24px 0;}
+  .toc ol{margin:0;padding-left:20px}
+  .toc a{color:var(--blue);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  figure{margin:18px 0;padding:14px;border:1px dashed var(--line);border-radius:8px;background:#fbfcfd;}
+  figure .cap{font-size:13.5px;color:var(--muted);margin-top:6px;}
+  .ph{color:var(--muted);font-style:italic;}
+  .small{font-size:14px;color:var(--muted)}
+  hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+  .kw{color:#7ec8ff}
+  @page{size:A4;margin:16mm 14mm;}
+  @media print{
+    body{background:#fff;font-size:11.5pt}
+    .page{max-width:none;padding:0;margin:0}
+    h2{page-break-after:avoid}
+    h3,h4{page-break-after:avoid}
+    pre,table,.box,.step,figure{page-break-inside:avoid}
+    a{color:inherit;text-decoration:none}
+    .noprint{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Практическая работа</h1>
+
+<div class="box rule">
+  <span class="t">ГЛАВНОЕ ПРАВИЛО ЭТОЙ РАБОТЫ</span>
+  <p><b>Мы меняем структуру базы, но не меняем данные.</b> Восемь JSON-файлов — это источник, который выдал заказчик. Мы не удаляем оттуда строки, не переименовываем поля, не исправляем «странные» значения. Всё, что делаем: превращаем текстовые колонки в типизированные, расставляем ключи и связи.</p>
+  <p>Нашли в файле что-то необычное (дубль, пустое поле, ссылку на отсутствующую запись)? <b>Не правим.</b> Записываем в отчёт по работе и показываем преподавателю.</p>
+</div>
+
+<hr>
+
+<h2 id="s0">1. Словарик</h2>
+<p>Термины, которые дальше встречаются постоянно. Пробегитесь по ним один раз — дальше будет проще.</p>
+
+<table>
+  <tr><th>Слово</th><th>Что это простыми словами</th></tr>
+  <tr><td><b>Таблица</b></td><td>Одна «картотека». Например, все заказчики.</td></tr>
+  <tr><td><b>Строка (запись)</b></td><td>Одна карточка в картотеке. Один заказчик, один товар.</td></tr>
+  <tr><td><b>Колонка (поле)</b></td><td>Одна характеристика у всех карточек. Например, «телефон».</td></tr>
+  <tr><td><b>Тип данных</b></td><td>Правило, что лежит в колонке: число, текст, дробное число. От типа зависит, сравнится <code>1000</code> с <code>200</code> как числа или как буквы.</td></tr>
+  <tr><td><b>Первичный ключ (PK)</b></td><td>Номер карточки. Уникален, не повторяется, по нему карточку находят. В наших файлах PK заданы явно — их надо сохранить.</td></tr>
+  <tr><td><b>Внешний ключ (FK)</b></td><td>Ссылка из одной таблицы в другую. В строке заказа лежит id заказчика — это FK на таблицу заказчиков.</td></tr>
+  <tr><td><b>Ссылочная целостность</b></td><td>Правило «нельзя ссылаться в пустоту». Нельзя записать заказ для заказчика, которого нет в базе.</td></tr>
+  <tr><td><b>Связь 1:М</b></td><td>Один заказчик — много заказов. Читается «один ко многим».</td></tr>
+  <tr><td><b>Связь 1:1</b></td><td>Один пользователь — одна карточка заказчика.</td></tr>
+  <tr><td><b>CASCADE</b></td><td>«Удали родителя — удали и детей». Удалили заказ — пропал его состав.</td></tr>
+  <tr><td><b>RESTRICT</b></td><td>«Не дам удалить родителя, пока есть дети». Товар, который входит в спецификацию, удалить не даст.</td></tr>
+  <tr><td><b>CHECK</b></td><td>Ограничение-сторож: «в колонку <code>quantity</code> можно только число больше нуля».</td></tr>
+  <tr><td><b>Индекс</b></td><td>Алфавитный указатель в конце учебника. Ускоряет поиск, но занимает место.</td></tr>
+</table>
+
+<hr>
+
+<h2 id="s1">2. Общая картина: что и в каком порядке делаем</h2>
+
+<p>Работа состоит из трёх модулей, и они идут строго друг за другом: каждый следующий опирается на результат предыдущего.</p>
+
+<table>
+  <tr><th>Модуль</th><th>Что на выходе</th><th>Зачем</th></tr>
+  <tr><td><b>БД-1</b></td><td>Файл <code>app.db</code> с 9 таблицами, связями, типами; схема в draw.io</td><td>Хранилище данных. Здесь же снимается ER-диаграмма для задания 1.1</td></tr>
+  <tr><td><b>БД-2</b></td><td>Файл <code>models.py</code> на SQLAlchemy + рабочее окружение <code>venv</code></td><td>Приложение перестаёт хранить пользователей в списке и работает с настоящей базой</td></tr>
+  <tr><td><b>БД-3</b></td><td>Один SQL-запрос + файл с его текстом</td><td>Ответ на задание 3.1: полная стоимость заказа</td></tr>
+</table>
+
+<p>Маршрут данных целиком:</p>
+
+<pre>JSON  →  CSV  →  SQLite Browser  →  скрипт (типы, ключи, связи)  →  app.db
+                                                                    │
+                                            SQLAlchemy (models.py) ─┘
+                                                                    │
+                                                  SQL-запрос (Модуль БД-3)</pre>
+
+<div class="box tip">
+  <span class="t">ТРИ ВОЛНЫ РАБОТЫ</span>
+  <p><b>Волна 1 (БД-1):</b> данные из файлов попадают в базу как есть — все колонки текстовые, ключей нет.<br>
+     <b>Волна 2 (БД-1):</b> один скрипт пересобирает таблицы: типы, PK, FK, CHECK. Данные при этом переливаются, ничего не теряется.<br>
+     <b>Волна 3 (БД-2 и БД-3):</b> к готовой базе подключаемся из Python и из SQL. Данные больше не трогаем вообще.</p>
+</div>
+
+<hr>
+
+<h2 id="s2">3. Модуль БД-1. База данных: от JSON до SQLite Browser</h2>
+
+<h3>3.1. Что должно получиться</h3>
+<ul>
+  <li>файл <code>app.db</code> в папке проекта;</li>
+  <li>девять таблиц: восемь импортированных плюс <code>Users</code>;</li>
+  <li>у каждой таблицы — типы колонок, первичный ключ, внешние ключи и ограничения;</li>
+  <li>схема базы, нарисованная в draw.io по фактическим таблицам.</li>
+</ul>
+
+<h3>3.2. Состав таблиц</h3>
+
+<table>
+  <tr><th>Таблица</th><th>Что хранит</th><th>Группа</th></tr>
+  <tr><td><code>Customers</code></td><td>Заказчики: контакты, адрес, тип «Покупатель/Поставщик»</td><td>Справочники</td></tr>
+  <tr><td><code>Products</code></td><td>Товары и изделия</td><td>Справочники</td></tr>
+  <tr><td><code>Materials</code></td><td>Материалы и технологические операции</td><td>Справочники</td></tr>
+  <tr><td><code>Orders</code></td><td>Заказы: кто заказал, дата, статус</td><td>Транзакции</td></tr>
+  <tr><td><code>Order_items</code></td><td>Состав заказа: товар и количество</td><td>Транзакции</td></tr>
+  <tr><td><code>Specification</code></td><td>Состав изделия: товар, материал, норма расхода</td><td>Состав изделия</td></tr>
+  <tr><td><code>Prices</code></td><td>Цены на товары, материалы и операции</td><td>Полиморфные: цена</td></tr>
+  <tr><td><code>Sales</code></td><td>Скидки на товары, материалы и операции</td><td>Полиморфные: скидка</td></tr>
+  <tr><td><code>Users</code></td><td>Логины, пароли, роли приложения</td><td>Авторизация</td></tr>
+</table>
+
+<p class="small">Слово «полиморфные» значит вот что: одна и та же строка таблицы <code>Prices</code> может относиться либо к товару, либо к материалу, либо к операции. В исходном файле это записано двумя колонками: <code>item_id</code> (номер объекта) и <code>item_type</code> (что это за объект).</p>
+
+<h3>3.3. Шаг 1–4. Конвертация JSON в CSV</h3>
+
+<div class="step">
+  <span class="t">Шаг 1. Установите расширение JSON to CSV</span>
+  <p>В VS Code откройте панель расширений (<code>Ctrl+Shift+X</code>), в поиске наберите <b>JSON to CSV</b> — нужное расширение подписано автором <b>Khaer Ansori</b> — и нажмите <b>Install</b>.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 2. Откройте JSON-файл в VS Code</span>
+  <p><b>File → Open File…</b> и выберите любой из восьми файлов с Google Drive, например <code>Prices.json</code>. Файл сначала скачайте в папку проекта: VS Code работает с файлами на диске, а не в облаке.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 3. Запустите конвертацию</span>
+  <p>Нажмите <code>Ctrl+Shift+P</code>, наберите <b>Convert JSON to CSV</b> и выберите команду с этим именем. VS Code откроет новый буфер без имени: в нём массив объектов уже разложен по строкам, значения разделены запятой, первая строка — заголовки колонок.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 4. Сохраните результат с расширением .csv</span>
+  <p><b>File → Save As…</b>, имя файла держите равным имени таблицы: <code>Prices.json</code> → <code>Prices.csv</code>. Сохраняйте в папку проекта, рядом с остальными файлами данных.</p>
+</div>
+
+<div class="box warn">
+  <span class="t">ВАЖНО</span>
+  <p>Два свойства файла решают всё при импорте: <b>кодировка</b> и <b>разделитель</b>. Расширение пишет UTF-8 с запятой — не меняйте ни то, ни другое: диалог импорта в шаге 6 настроен ровно на эти значения, и кириллица проходит конвертацию без искажений.</p>
+  <p>Если после команды вместо таблицы в буфере оказалась одна строка из символов — исходный JSON не был массивом объектов. Проверьте, что скачали нужный файл.</p>
+</div>
+
+<h3>3.4. Шаг 5–8. Создание базы и импорт таблиц</h3>
+
+<div class="step">
+  <span class="t">Шаг 5. Создайте базу данных</span>
+  <p>Запустите SQLite Browser и выполните <b>File → New Database</b> (или кнопка <b>New Database</b> на панели инструментов). Имя файла — <code>app.db</code>, сохранить его нужно в папку проекта: именно этот файл позже откроет приложение через SQLAlchemy. Появится окно создания таблицы — нажмите <b>Cancel</b>: таблицы создаст импорт, вручную их рисовать не нужно.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 6. Импортируйте первую таблицу из CSV</span>
+  <p>Выполните <b>File → Import → Table from CSV file…</b> и выберите файл таблицы. В окне импорта заполните:</p>
+  <table>
+    <tr><th>Поле окна</th><th>Значение</th></tr>
+    <tr><td>Table name</td><td>имя таблицы, совпадает с именем файла</td></tr>
+    <tr><td>Column names in first line</td><td>включён — иначе заголовки станут первой строкой данных</td></tr>
+    <tr><td>Field separator</td><td>запятая</td></tr>
+    <tr><td>Quote character</td><td>двойная кавычка</td></tr>
+    <tr><td>Encoding</td><td>UTF-8</td></tr>
+    <tr><td>Trim fields?</td><td>включён</td></tr>
+  </table>
+  <p>Таблица в нижней части окна показывает, как SQLite Browser разобрал файл: сравните пару строк с исходным CSV, нажмите <b>OK</b> и сразу нажмите <b>Write Changes</b> на панели — без этой кнопки импортированная таблица останется только в памяти программы.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 7. Импортируйте остальные таблицы</span>
+  <p>Повторите шаг 6 для всех восьми файлов: <code>Customers</code>, <code>Products</code>, <code>Materials</code>, <code>Orders</code>, <code>Order_items</code>, <code>Specification</code>, <code>Prices</code>, <code>Sales</code>. После каждого импорта не забывайте нажимать <b>Write Changes</b>. Данные импортированной таблицы смотрят на вкладке <b>Browse Data</b>, выбрав таблицу в списке сверху.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 8. Посмотрите, что создал импорт</span>
+  <p>Откройте вкладку <b>Database Structure</b>: импорт сделал все колонки текстовыми — у CSV типов нет, первичных и внешних ключей тоже нет. Это ожидаемо и пока не трогаем: типы, ключи и связи выставляются одним скриптом в разделе 3.7.</p>
+</div>
+
+<div class="box warn">
+  <span class="t">ПОЧЕМУ БЕЗ ТИПОВ НЕЛЬЗЯ РАБОТАТЬ</span>
+  <p>SQLite молча сравнит числа как строки, и цены отсортируются в порядке <code>1000 &lt; 200 &lt; 35</code> — по первому символу. Тип, поставленный один раз, экономит поиск таких ошибок в конце работы.</p>
+</div>
+
+<h3 id="s2-5">3.5. Шаг 8.5. Проверка исходных данных (обязательный шаг)</h3>
+
+<p>Прежде чем пересобирать таблицы, посмотрите на то, что импортировалось. Это <b>не редактирование</b>, а осмотр: мы ищем места, о которых надо написать в отчёте. Выполните на вкладке <b>Execute SQL</b> четыре запроса по очереди.</p>
+
+<p><b>Запрос 1. Дубли первичных ключей.</b> Первичный ключ не может повторяться, поэтому если дубль есть — пересоздание таблиц упадёт с ошибкой.</p>
+<pre>SELECT 'Products'    AS tbl, id, COUNT(*) AS cnt FROM Products    GROUP BY id HAVING cnt &gt; 1
+UNION ALL SELECT 'Materials',   id, COUNT(*) FROM Materials   GROUP BY id HAVING COUNT(*) &gt; 1
+UNION ALL SELECT 'Orders',      id, COUNT(*) FROM Orders      GROUP BY id HAVING COUNT(*) &gt; 1
+UNION ALL SELECT 'Sales',       id, COUNT(*) FROM Sales       GROUP BY id HAVING COUNT(*) &gt; 1
+UNION ALL SELECT 'Prices',      id, COUNT(*) FROM Prices      GROUP BY id HAVING COUNT(*) &gt; 1
+UNION ALL SELECT 'Specification', id, COUNT(*) FROM Specification GROUP BY id HAVING COUNT(*) &gt; 1
+UNION ALL SELECT 'Order_items', id, COUNT(*) FROM Order_items GROUP BY id HAVING COUNT(*) &gt; 1;</pre>
+
+<p><b>Запрос 2. Ссылки в пустоту.</b> Ищем строки, которые ссылаются на объект, которого нет в базе.</p>
+<pre>-- позиции заказов на несуществующий товар
+SELECT DISTINCT oi.product_id AS missing_product
+FROM Order_items oi
+WHERE NOT EXISTS (SELECT 1 FROM Products p WHERE p.id = oi.product_id);
+
+-- заказы на несуществующего заказчика
+SELECT DISTINCT o.customer_id AS missing_customer
+FROM Orders o
+WHERE NOT EXISTS (SELECT 1 FROM Customers c WHERE c.id = o.customer_id);
+
+-- спецификация на несуществующий товар или материал
+SELECT 'product' AS what, s.product_id AS id FROM Specification s
+WHERE NOT EXISTS (SELECT 1 FROM Products p WHERE p.id = s.product_id)
+UNION ALL
+SELECT 'material', s.material_id FROM Specification s
+WHERE NOT EXISTS (SELECT 1 FROM Materials m WHERE m.id = s.material_id);</pre>
+
+<p><b>Запрос 3. Цены и скидки на несуществующие объекты.</b> Здесь ссылка полиморфная, поэтому проверяем обе ветки.</p>
+<pre>SELECT p.id, p.item_id, p.item_type
+FROM Prices p
+WHERE (p.item_type = 'Товар'
+       AND NOT EXISTS (SELECT 1 FROM Products  x WHERE x.id = p.item_id))
+   OR (p.item_type IN ('Материал','Операция')
+       AND NOT EXISTS (SELECT 1 FROM Materials x WHERE x.id = p.item_id));
+
+SELECT s.id, s.item_id, s.item_type
+FROM Sales s
+WHERE (s.item_type = 'Товар'
+       AND NOT EXISTS (SELECT 1 FROM Products  x WHERE x.id = s.item_id))
+   OR (s.item_type IN ('Материал','Операция')
+       AND NOT EXISTS (SELECT 1 FROM Materials x WHERE x.id = s.item_id));</pre>
+
+<p><b>Запрос 4. Какие значения вообще встречаются в колонках-справочниках.</b> Это нужно, чтобы правильно написать <code>CHECK</code> в следующем разделе.</p>
+<pre>SELECT 'Customers.type'   AS col, type      AS val FROM Customers   GROUP BY type
+UNION ALL SELECT 'Materials.type',  type      FROM Materials   GROUP BY type
+UNION ALL SELECT 'Orders.status',   status    FROM Orders      GROUP BY status
+UNION ALL SELECT 'Prices.item_type', item_type FROM Prices      GROUP BY item_type
+UNION ALL SELECT 'Sales.item_type',  item_type FROM Sales       GROUP BY item_type;</pre>
+
+<div class="box rule">
+  <span class="t">ЧТО ДЕЛАТЬ С РЕЗУЛЬТАТОМ</span>
+  <p><b>Все четыре запроса вернули пусто.</b> Отлично — переходите к разделу 3.7.</p>
+  <p><b>Что-то вернулось.</b> Это не повод править файлы. Покажите результат преподавателю и зафиксируйте в отчёте. Дальше возможны два пути:</p>
+  <ul>
+    <li><b>Дубль PK.</b> Строк с одинаковым <code>id</code> в таблице-источнике быть не должно. Если он есть — это дефект исходных данных; в отчёте фиксируем, но в базе оставляем как есть.</li>
+    <li><b>Ссылка в пустоту.</b> Она не помешает импорту, если на время пересоздания таблиц <b>выключена проверка внешних ключей</b> (в SQLite она выключена по умолчанию; в SQLite Browser за это отвечает галочка <b>Edit → Preferences → Enforce foreign keys</b> — её нужно снять на время раздела 3.7 и включить после).</li>
+  </ul>
+</div>
+
+<h3>3.6. Шаг 9. Таблица Users и базовый пользователь</h3>
+
+<p>Таблица <code>Users</code> не импортируется: она создаётся скриптом. Это таблица авторизации приложения, и её структура в точности соответствует модели, которую в модуле БД-2 будет читать SQLAlchemy: колонки <code>login</code>, <code>password</code>, <code>role</code>, <code>full_name</code>, <code>is_locked</code>, <code>attempts</code>.</p>
+
+<div class="step">
+  <span class="t">Создайте таблицу Users и добавьте базового пользователя</span>
+  <p>В SQLite Browser перейдите на вкладку <b>Execute SQL</b>, вставьте скрипт и выполните его (кнопка с треугольником или <code>F5</code>), затем нажмите <b>Write Changes</b>.</p>
+<pre>CREATE TABLE Users (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    login       TEXT NOT NULL UNIQUE,
+    password    TEXT NOT NULL,
+    full_name   TEXT,
+    role        TEXT,
+    is_locked   INTEGER NOT NULL DEFAULT 0,
+    attempts    INTEGER NOT NULL DEFAULT 0
+);
+
+INSERT INTO Users (login, password, full_name, role, is_locked, attempts)
+VALUES ('admin', 'admin', 'Администратор Системы', 'Администратор', 0, 0);</pre>
+</div>
+
+<div class="box rule">
+  <span class="t">НЕ ЗАБУДЬТЕ БАЗОВОГО ПОЛЬЗОВАТЕЛЯ</span>
+  <p>Без оператора <code>INSERT</code> база останется с пустой таблицей <code>Users</code>, и в приложение нельзя будет войти вообще: экран входа откажет даже администратору, потому что проверять логин будет не по чему. Пара <code>admin / admin</code> — базовый пользователь учебной работы.</p>
+  <p>Пароль в учебной версии хранится в колонке <code>password</code> в открытом виде — хеширование в этой работе не применяется. Прежде чем показывать работу кому-либо ещё, смените пароль базовой записи на свой.</p>
+</div>
+
+<h3>3.7. Шаг 10. Пересоздание таблиц: типы, ключи, связи</h3>
+
+<h4>Как это устроено и почему именно так</h4>
+
+<p>В SQLite Browser <b>нет редактора внешних ключей</b>. Первичный ключ, <code>NOT NULL</code> и <code>UNIQUE</code> правятся кнопками (<b>Database Structure → Modify table</b>), а связь объявляется только в описании таблицы оператором <code>FOREIGN KEY … REFERENCES …</code>. Поэтому импортированные таблицы пересоздают скриптом по одному шаблону:</p>
+
+<ol>
+  <li>создаётся таблица-дубль с нужными типами и ключами (<code>…_new</code>);</li>
+  <li>данные переливаются оператором <code>INSERT INTO … SELECT …</code>;</li>
+  <li>старая таблица удаляется (<code>DROP TABLE</code>);</li>
+  <li>дубль переименовывается в прежнее имя (<code>ALTER TABLE … RENAME TO …</code>).</li>
+</ol>
+
+<p>Разберём шаблон на <code>Order_items</code>. Состав заказа зависит от заказов и товаров, поэтому обе колонки объявлены внешними ключами: <code>order_id</code> — с правилом <code>CASCADE</code>, <code>product_id</code> — с <code>RESTRICT</code>. Первичный ключ <code>id</code> сохранён как в исходном файле: задание прямо требует, чтобы структура принимала явные значения PK. Количество проверяется ограничением <code>CHECK (quantity &gt; 0)</code>.</p>
+
+<h4>Полная таблица связей</h4>
+<table>
+  <tr><th>Таблица</th><th>Колонка</th><th>Ссылается на</th><th>ON DELETE</th><th>Что это значит</th></tr>
+  <tr><td><code>Customers</code></td><td><code>user_id</code></td><td><code>Users.id</code></td><td>CASCADE</td><td>удалили пользователя — удалилась карточка заказчика</td></tr>
+  <tr><td><code>Orders</code></td><td><code>customer_id</code></td><td><code>Customers.id</code></td><td>RESTRICT</td><td>заказчика с заказами удалить нельзя</td></tr>
+  <tr><td><code>Order_items</code></td><td><code>order_id</code></td><td><code>Orders.id</code></td><td>CASCADE</td><td>удалили заказ — удалился его состав</td></tr>
+  <tr><td><code>Order_items</code></td><td><code>product_id</code></td><td><code>Products.id</code></td><td>RESTRICT</td><td>товар из заказа удалить нельзя</td></tr>
+  <tr><td><code>Specification</code></td><td><code>product_id</code></td><td><code>Products.id</code></td><td>CASCADE</td><td>удалили товар — удалилась его спецификация</td></tr>
+  <tr><td><code>Specification</code></td><td><code>material_id</code></td><td><code>Materials.id</code></td><td>RESTRICT</td><td>материал из спецификации удалить нельзя</td></tr>
+  <tr><td><code>Prices</code></td><td><code>product_id</code></td><td><code>Products.id</code></td><td>CASCADE</td><td>удалили товар — ушла его цена</td></tr>
+  <tr><td><code>Prices</code></td><td><code>material_id</code></td><td><code>Materials.id</code></td><td>CASCADE</td><td>удалили материал — ушла его цена</td></tr>
+  <tr><td><code>Sales</code></td><td><code>product_id</code></td><td><code>Products.id</code></td><td>CASCADE</td><td>удалили товар — ушла его скидка</td></tr>
+  <tr><td><code>Sales</code></td><td><code>material_id</code></td><td><code>Materials.id</code></td><td>CASCADE</td><td>удалили материал — ушла его скидка</td></tr>
+</table>
+
+<p>Последняя строка замыкает цепочку «пользователь приложения — карточка заказчика»: ссылка один-к-одному, поэтому внешний ключ дополнен ограничением <code>UNIQUE</code> на <code>Customers.user_id</code>. Остальные связи — один-ко-многим.</p>
+
+<div class="box warn">
+  <span class="t">ДВЕ ЛОВУШКИ, ИЗ-ЗА КОТОРЫХ СКРИПТ ПАДАЛ РАНЬШЕ</span>
+  <p><b>1. Колонка адреса.</b> В CSV она называется <code>addres</code> — так она записана в исходном JSON. Скрипт ниже использует <b>именно это имя</b>. Если написать <code>address</code>, база ответит <code>no such column</code>.</p>
+  <p><b>2. Колонка user_id.</b> В CSV её нет — она появляется только в проекте. Поэтому перед переливкой мы добавляем её командой <code>ALTER TABLE Customers ADD COLUMN user_id INTEGER;</code>.</p>
+</div>
+
+<h4>Скрипт целиком</h4>
+<pre>-- ============================================================
+--  БД-1, шаг 10. Пересоздание таблиц: типы, ключи, связи.
+--  Выполнять целиком на вкладке Execute SQL, затем Write Changes.
+--  ВНИМАНИЕ: на время выполнения снимите галочку
+--  Edit → Preferences → Enforce foreign keys.
+-- ============================================================
+
+-- 0) Готовим импортированные таблицы к переливке
+ALTER TABLE Customers ADD COLUMN user_id INTEGER;   -- колонки нет в CSV
+
+-- ------------------------------------------------------------
+-- 1) Customers
+-- ------------------------------------------------------------
+CREATE TABLE customers_new (
+    id       TEXT PRIMARY KEY,
+    user_id  INTEGER UNIQUE REFERENCES Users (id) ON DELETE CASCADE,
+    name     TEXT NOT NULL,
+    inn      TEXT,
+    addres   TEXT,                                   -- имя из CSV, не address!
+    phone    TEXT,
+    type     TEXT NOT NULL CHECK (type IN ('Покупатель', 'Поставщик'))
+);
+INSERT INTO customers_new (id, user_id, name, inn, addres, phone, type)
+SELECT id, user_id, name, inn, addres, phone, type FROM Customers;
+DROP TABLE Customers;
+ALTER TABLE customers_new RENAME TO Customers;
+
+-- ------------------------------------------------------------
+-- 2) Products
+-- ------------------------------------------------------------
+CREATE TABLE products_new (
+    id       INTEGER PRIMARY KEY,
+    name     TEXT NOT NULL,
+    category TEXT NOT NULL
+);
+INSERT INTO products_new (id, name, category)
+SELECT id, name, category FROM Products;
+DROP TABLE Products;
+ALTER TABLE products_new RENAME TO Products;
+
+-- ------------------------------------------------------------
+-- 3) Materials
+--    Значения для CHECK сверьте запросом 4 из раздела 3.5.
+-- ------------------------------------------------------------
+CREATE TABLE materials_new (
+    id   INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('Материал', 'Операция'))
+);
+INSERT INTO materials_new (id, name, type)
+SELECT id, name, type FROM Materials;
+DROP TABLE Materials;
+ALTER TABLE materials_new RENAME TO Materials;
+
+-- ------------------------------------------------------------
+-- 4) Orders
+-- ------------------------------------------------------------
+CREATE TABLE orders_new (
+    id          INTEGER PRIMARY KEY,
+    customer_id TEXT NOT NULL REFERENCES Customers (id) ON DELETE RESTRICT,
+    order_date  TEXT NOT NULL,
+    status      TEXT NOT NULL
+                CHECK (status IN ('Новый', 'В работе', 'Отгружен', 'Отменен'))
+);
+INSERT INTO orders_new (id, customer_id, order_date, status)
+SELECT id, customer_id, order_date, status FROM Orders;
+DROP TABLE Orders;
+ALTER TABLE orders_new RENAME TO Orders;
+
+-- ------------------------------------------------------------
+-- 5) Order_items
+--    PK — id, как в исходном файле (задание требует принимать
+--    явные значения PK). Колонки src_id в CSV нет.
+-- ------------------------------------------------------------
+CREATE TABLE order_items_new (
+    id         INTEGER PRIMARY KEY,
+    order_id   INTEGER NOT NULL REFERENCES Orders (id)   ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES Products (id) ON DELETE RESTRICT,
+    quantity   INTEGER NOT NULL CHECK (quantity &gt; 0)
+);
+INSERT INTO order_items_new (id, order_id, product_id, quantity)
+SELECT id, order_id, product_id, quantity FROM Order_items;
+DROP TABLE Order_items;
+ALTER TABLE order_items_new RENAME TO Order_items;
+
+-- ------------------------------------------------------------
+-- 6) Specification
+-- ------------------------------------------------------------
+CREATE TABLE specification_new (
+    id          INTEGER PRIMARY KEY,
+    product_id  INTEGER NOT NULL REFERENCES Products (id)  ON DELETE CASCADE,
+    material_id INTEGER NOT NULL REFERENCES Materials (id) ON DELETE RESTRICT,
+    qty         REAL    NOT NULL CHECK (qty &gt; 0),
+    UNIQUE (product_id, material_id)
+);
+INSERT INTO specification_new (id, product_id, material_id, qty)
+SELECT id, product_id, material_id, qty FROM Specification;
+DROP TABLE Specification;
+ALTER TABLE specification_new RENAME TO Specification;
+
+-- ------------------------------------------------------------
+-- 7) Prices
+--    Полиморфные item_id + item_type раскладываем по двум
+--    колонкам: 'Товар' → product_id, остальное → material_id.
+-- ------------------------------------------------------------
+CREATE TABLE prices_new (
+    id          INTEGER PRIMARY KEY,
+    product_id  INTEGER REFERENCES Products  (id) ON DELETE CASCADE,
+    material_id INTEGER REFERENCES Materials (id) ON DELETE CASCADE,
+    price       REAL NOT NULL CHECK (price &gt;= 0),
+    CHECK ((product_id IS NOT NULL AND material_id IS NULL)
+        OR (product_id IS NULL AND material_id IS NOT NULL))
+);
+INSERT INTO prices_new (id, product_id, material_id, price)
+SELECT id,
+       CASE WHEN item_type = 'Товар' THEN item_id END,
+       CASE WHEN item_type IN ('Материал', 'Операция') THEN item_id END,
+       price
+FROM Prices;
+DROP TABLE Prices;
+ALTER TABLE prices_new RENAME TO Prices;
+
+-- ------------------------------------------------------------
+-- 8) Sales
+-- ------------------------------------------------------------
+CREATE TABLE sales_new (
+    id               INTEGER PRIMARY KEY,
+    product_id       INTEGER REFERENCES Products  (id) ON DELETE CASCADE,
+    material_id      INTEGER REFERENCES Materials (id) ON DELETE CASCADE,
+    discount_percent REAL NOT NULL DEFAULT 0
+                     CHECK (discount_percent BETWEEN 0 AND 100),
+    CHECK ((product_id IS NOT NULL AND material_id IS NULL)
+        OR (product_id IS NULL AND material_id IS NOT NULL))
+);
+INSERT INTO sales_new (id, product_id, material_id, discount_percent)
+SELECT id,
+       CASE WHEN item_type = 'Товар' THEN item_id END,
+       CASE WHEN item_type IN ('Материал', 'Операция') THEN item_id END,
+       discount_percent
+FROM Sales;
+DROP TABLE Sales;
+ALTER TABLE sales_new RENAME TO Sales;</pre>
+
+<div class="box tip">
+  <span class="t">ПОЧЕМУ УДАЛЕНИЕ СТАРЫХ ТАБЛИЦ ПРОХОДИТ БЕЗ ОШИБОК</span>
+  <p>Каждая таблица удаляется <b>до</b> того, как на неё успевает сослаться новая. Например, <code>DROP TABLE Customers</code> выполняется раньше, чем создаётся <code>orders_new</code> с внешним ключом на <code>Customers</code>. Поэтому порядок блоков в скрипте менять нельзя.</p>
+</div>
+
+<div class="box warn">
+  <span class="t">ЕСЛИ ПОЯВИЛАСЬ ОШИБКА FOREIGN KEY CONSTRAINT FAILED</span>
+  <p>Она возникает на шагах 7 и 8 (<code>INSERT INTO prices_new …</code>, <code>INSERT INTO sales_new …</code>), если в исходных данных есть цена или скидка на объект, которого нет в <code>Products</code>/<code>Materials</code>. Это результат проверки из раздела 3.5. Не удаляйте строку из исходных файлов — зафиксируйте случай в отчёте и покажите преподавателю.</p>
+</div>
+
+<h3>3.8. Шаг 11. Проверка, что всё сошлось</h3>
+
+<pre>-- 1) Сколько строк в каждой таблице. Сверьте с числом записей в JSON.
+SELECT 'Customers' AS tbl,     COUNT(*) AS rows FROM Customers
+UNION ALL SELECT 'Products',        COUNT(*) FROM Products
+UNION ALL SELECT 'Materials',       COUNT(*) FROM Materials
+UNION ALL SELECT 'Orders',          COUNT(*) FROM Orders
+UNION ALL SELECT 'Order_items',     COUNT(*) FROM Order_items
+UNION ALL SELECT 'Specification',   COUNT(*) FROM Specification
+UNION ALL SELECT 'Prices',          COUNT(*) FROM Prices
+UNION ALL SELECT 'Sales',           COUNT(*) FROM Sales
+UNION ALL SELECT 'Users',           COUNT(*) FROM Users;
+
+-- 2) Все ли внешние ключи живые. Пусто = отлично.
+PRAGMA foreign_key_check;
+
+-- 3) Проверка структуры: покажет имя таблицы и текст её описания
+SELECT name, sql FROM sqlite_master WHERE type = 'table' ORDER BY name;</pre>
+
+<p>После проверки вернитесь в <b>Edit → Preferences</b> и <b>включите</b> галочку <b>Enforce foreign keys</b>: с ней <code>CASCADE</code> и <code>RESTRICT</code> действительно срабатывают при удалении, без неё SQLite молча игнорирует внешние ключи.</p>
+
+<div class="box check">
+  <span class="t">ПРОБНЫЙ ТЕСТ СВЯЗИ</span>
+  <p>Попробуйте удалить товар, который входит в спецификацию. SQLite Browser должен отказаться: <code>FOREIGN KEY constraint failed</code>. Отказ — это успех: значит, правило <code>RESTRICT</code> работает.</p>
+</div>
+
+<h3>3.9. Шаг 12. Индексы — «алфавитный указатель» базы</h3>
+
+<p>Индекс — это как алфавитный указатель в конце учебника. Нужна тема «Фотосинтез»: без указателя листаешь триста страниц, с указателем — открыл нужную сразу.</p>
+
+<p>В базе ровно так же. Когда мы соединяем таблицы, нужно быстро найти строки заказа №47 в таблице <code>Order_items</code>. Без индекса СУБД читает таблицу подряд, строку за строкой; с индексом — прыгает сразу в нужное место.</p>
+
+<p><b>Заметьте:</b> на ваших 70–200 строках разницы не будет вообще. Индекс — это привычка делать правильно, она окупается на миллионах строк. Плата за индекс: немного места на диске и чуть более медленная вставка.</p>
+
+<p>SQLite создаёт индексы автоматически только для <code>PRIMARY KEY</code> и <code>UNIQUE</code>. Для внешних ключей индекс нужно объявить самому — по этим колонкам идёт поиск при соединении таблиц.</p>
+
+<pre>CREATE INDEX IF NOT EXISTS ix_customers_user     ON Customers     (user_id);
+CREATE INDEX IF NOT EXISTS ix_orders_customer    ON Orders        (customer_id);
+CREATE INDEX IF NOT EXISTS ix_order_items_order  ON Order_items   (order_id);
+CREATE INDEX IF NOT EXISTS ix_order_items_product ON Order_items  (product_id);
+CREATE INDEX IF NOT EXISTS ix_spec_product       ON Specification (product_id);
+CREATE INDEX IF NOT EXISTS ix_spec_material      ON Specification (material_id);
+CREATE INDEX IF NOT EXISTS ix_prices_product     ON Prices        (product_id);
+CREATE INDEX IF NOT EXISTS ix_prices_material    ON Prices        (material_id);
+CREATE INDEX IF NOT EXISTS ix_sales_product      ON Sales         (product_id);
+CREATE INDEX IF NOT EXISTS ix_sales_material     ON Sales         (material_id);</pre>
+
+<h3>3.10. Шаг 13. Схема базы данных в draw.io</h3>
+
+<p>Схема — карта базы: таблицы блоками, связи линиями. Её рисуют <b>после</b> импорта и расстановки ключей, по реальным таблицам, а не по памяти: поля блоков должны совпадать с тем, что стоит в SQLite Browser, включая типы и пометки PK, FK, UNIQUE.</p>
+
+<div class="step">
+  <span class="t">Нарисуйте схему в draw.io</span>
+  <p>Откройте draw.io и создайте новый файл. Разместите блоки группами по смыслу: справочники (<code>Customers</code>, <code>Products</code>, <code>Materials</code>), транзакции (<code>Orders</code>, <code>Order_items</code>), состав изделия (<code>Specification</code>), полиморфные цены и скидки (<code>Prices</code>, <code>Sales</code>), авторизация (<code>Users</code>). Соедините блоки линиями по таблице связей из раздела 3.7 и подпишите у линий кратность («1» и «N») и правило удаления (CASCADE, RESTRICT). Полиморфные ссылки <code>Prices</code> и <code>Sales</code> рисуйте пунктиром: из двух колонок заполнена ровно одна.</p>
+  <figure><span class="ph">[место для скриншота: схема базы данных в draw.io — восемь таблиц из JSON и Users для авторизации]</span>
+    <div class="cap">Рисунок 3 — Схема базы данных в draw.io</div></figure>
+</div>
+
+<div class="box tip">
+  <span class="t">КАК ЧИТАТЬ СХЕМУ</span>
+  <p>Вилка на конце линии — сторона «многие», перпендикулярная черта — сторона «один». Подпись <b>1..N · CASCADE</b> читается так: у одной записи-родителя много детей, и при удалении родителя дети удаляются вместе с ним; <b>1..N · RESTRICT</b> — детей нужно сначала убрать или перепривязать.</p>
+  <p>Пунктирные рамки групп — не часть СУБД, а помощь человеку: девять таблиц без группировки превращаются в кашу. Держите группы и в своей схеме: по ним же проверяют полноту связей.</p>
+</div>
+
+<div class="box check">
+  <span class="t">ПРОВЕРЬТЕ СЕБЯ ПО МОДУЛЮ БД-1</span>
+  <ul>
+    <li>Файл <code>app.db</code> лежит в папке проекта, в нём девять таблиц.</li>
+    <li>Запросы 1–4 из раздела 3.5 выполнены, результат записан в отчёт.</li>
+    <li>Числа строк в разделе 3.8 совпадают с числом записей в JSON-файлах.</li>
+    <li><code>PRAGMA foreign_key_check;</code> возвращает пусто.</li>
+    <li>Удаление товара из спецификации запрещено (RESTRICT работает).</li>
+    <li>В <code>Prices</code> и <code>Sales</code> у каждой строки заполнена ровно одна из колонок <code>product_id</code> / <code>material_id</code>.</li>
+    <li>Схема в draw.io нарисована по фактическим таблицам, у линий подписаны кратность и правило удаления.</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="s3">4. Модуль БД-2. Виртуальное окружение и SQLAlchemy</h2>
+
+<p>В модуле 4 данные жили в списке-заглушке <code>USERS</code> внутри <code>models.py</code>. В этом модуле список исчезает из кода: данные лежат в файле <code>app.db</code>, а приложение ходит к ним через SQLAlchemy — библиотеку, которая берёт на себя построение SQL. Чтобы библиотека не перемешивалась с пакетами других проектов, её ставят не в системный Python, а в виртуальное окружение проекта.</p>
+
+<h3>4.1. Виртуальное окружение: Windows и Linux</h3>
+
+<p>Виртуальное окружение — это папка с копией интерпретатора и собственным каталогом пакетов. Пакеты проекта живут в ней и не мешают остальным: два проекта могут держать разные версии SQLAlchemy и не спорить. Окружение создаётся один раз, а активируется перед каждой рабочей сессией.</p>
+
+<div class="step">
+  <span class="t">Шаг 14 (Windows). Создать и активировать окружение</span>
+  <p>Откройте терминал в папке проекта (<code>Shift</code> + правый клик → «Открыть окно PowerShell здесь» или обычный <code>cmd</code>) и выполните две команды:</p>
+<pre>python -m venv venv
+venv\Scripts\activate</pre>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 15 (Linux). Создать и активировать окружение</span>
+  <p>Откройте терминал в папке проекта и выполните те же два действия в синтаксисе Linux:</p>
+<pre>python3 -m venv venv
+source venv/bin/activate</pre>
+  <p>Если Linux ответил ошибкой «The virtual environment was not created successfully» или сообщением, что модуль <code>venv</code> не найден, поставьте пакет окружений: <code>sudo apt install python3-venv</code> для Debian и Ubuntu, <code>sudo dnf install python3</code> для Fedora — и повторите шаг.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 16. Установите SQLAlchemy и проверьте установку</span>
+  <p>В активированном окружении — подсказка терминала начинается с <code>(venv)</code> — выполните установку и проверку версии:</p>
+<pre>python -m pip install --upgrade pip
+pip install sqlalchemy
+python -c "import sqlalchemy; print(sqlalchemy.__version__)"</pre>
+  <p>Напечатанный номер версии означает: библиотека стоит в окружении проекта и готова к работе.</p>
+</div>
+
+<h4>Шпаргалка по командам окружения</h4>
+<table>
+  <tr><th>Действие</th><th>Windows</th><th>Linux</th></tr>
+  <tr><td>Создать окружение</td><td><code>python -m venv venv</code></td><td><code>python3 -m venv venv</code></td></tr>
+  <tr><td>Активировать</td><td><code>venv\Scripts\activate</code></td><td><code>source venv/bin/activate</code></td></tr>
+  <tr><td>Выйти из окружения</td><td><code>deactivate</code></td><td><code>deactivate</code></td></tr>
+  <tr><td>Поставить пакет</td><td><code>pip install sqlalchemy</code></td><td><code>pip install sqlalchemy</code></td></tr>
+  <tr><td>Список установленного</td><td><code>pip freeze</code></td><td><code>pip freeze</code></td></tr>
+</table>
+
+<div class="box warn">
+  <span class="t">ВАЖНО</span>
+  <p>Окружение активируется <b>на каждое окно терминала отдельно</b>. Открыли новое окно — снова активируйте окружение, иначе <code>python</code> запустится системным и ответит <code>ModuleNotFoundError: No module named 'sqlalchemy'</code>, хотя пакет установлен.</p>
+  <p>В VS Code выберите интерпретатор из папки <code>venv</code> (<code>Ctrl+Shift+P</code> → <b>Python: Select Interpreter</b>), иначе кнопка запуска выполнит файл системным Python без наших пакетов.</p>
+</div>
+
+<h3>4.2. Как SQLAlchemy заменяет список-заглушку</h3>
+
+<p>Для чтения <code>models.py</code> достаточно четырёх понятий. Дальше весь код модуля опирается только на них.</p>
+
+<table>
+  <tr><th>Понятие</th><th>Что это в нашем коде</th></tr>
+  <tr><td><code>DATABASE_URL</code> и <code>engine</code></td><td>Адрес базы и созданное один раз «подключение»: <code>create_engine(DATABASE_URL)</code>. Запись <code>sqlite:///app.db</code> означает: файл <code>app.db</code> лежит рядом с <code>models.py</code>. Закомментированная строка с <code>postgresql</code> — тот же адрес для другой СУБД.</td></tr>
+  <tr><td><code>Base</code> и <code>User</code></td><td>Описание таблицы на Python. Строка <code>__table__ = Table("Users", Base.metadata, autoload_with=engine)</code> говорит: не описывать колонки руками, а прочитать структуру готовой таблицы <code>Users</code> прямо из базы.</td></tr>
+  <tr><td><code>Session</code></td><td>Рабочая сессия с базой: <code>with Session(engine) as session</code>. Внутри блока выполняются запросы, на выходе из блока сессия закрывается сама, даже если случилась ошибка.</td></tr>
+  <tr><td><code>select</code> и <code>commit</code></td><td>Запрос и подтверждение записи. <code>session.scalars(select(User).where(User.login == login)).first()</code> вернёт первую найденную строку или <code>None</code>; <code>session.commit()</code> фиксирует изменения. Без <code>commit</code> правки потеряются.</td></tr>
+</table>
+
+<div class="box tip">
+  <span class="t">ГЛАВНАЯ МЫСЛЬ МОДУЛЯ</span>
+  <p><b>База данных заменила хранилище, а не интерфейс.</b> Всю конвертацию строки таблицы в словарь собрала одна функция <code>_to_dict</code>, а экраны, как и прежде, вызывают <code>find_user</code>, <code>add_user</code>, <code>unlock_user</code> и не знают, список за ними или SQLite.</p>
+</div>
+
+<h3>4.3. Шаг 17. models.py: модель пользователей на SQLAlchemy</h3>
+
+<p>Удалите старое содержимое со списком <code>USERS</code> и положите в файл модель, работающую с базой. Ни одна строка интерфейса не зависит от того, как модель хранит данные, — только от имён функций и возвращаемых значений, поэтому замена проходит без правки экранов.</p>
+
+<pre>from sqlalchemy import *
+from sqlalchemy.orm import *
+
+#DATABASE_URL = "postgresql+psycopg2://postgres:admin@localhost:5432/nmo"
+DATABASE_URL = "sqlite:///app.db"
+engine = create_engine(DATABASE_URL, echo=False)
+
+class Base(DeclarativeBase):
+    """Базовый класс моделей."""
+
+class User(Base):
+    __table__ = Table("Users", Base.metadata, autoload_with=engine)
+
+def _to_dict(user):
+    """Преобразует объект User в словарь для GUI."""
+    if user is None:
+        return None
+    return {
+        "id": user.id,
+        "login": user.login,
+        "password": user.password,
+        "role": user.role,
+        "full_name": user.full_name,
+        "locked": bool(user.is_locked),
+        "attempts": user.attempts,
+    }
+
+# ---------------------------------------------------------------------------
+# Функции для работы с пользователями
+# ---------------------------------------------------------------------------
+
+def all_users():
+    """Возвращает список всех пользователей."""
+    with Session(engine) as session:
+        users = session.scalars(select(User).order_by(User.id)).all()
+        return [_to_dict(u) for u in users]
+
+def find_user(login, password):
+    """Ищет пользователя по логину и паролю. Если нет — None."""
+    with Session(engine) as session:
+        user = session.scalars(
+            select(User).where(User.login == login, User.password == password)
+        ).first()
+        return _to_dict(user)
+
+def user_by_login(login):
+    """Возвращает пользователя по логину (или None)."""
+    with Session(engine) as session:
+        user = session.scalars(select(User).where(User.login == login)).first()
+        return _to_dict(user)
+
+def login_exists(login):
+    """Есть ли пользователь с таким логином."""
+    return user_by_login(login) is not None
+
+def add_user(login, password, role, full_name):
+    """Добавляет нового пользователя."""
+    with Session(engine) as session:
+        session.add(
+            User(
+                login=login,
+                password=password,
+                full_name=full_name,
+                role=role,
+                is_locked=0,
+                attempts=0,
+            )
+        )
+        session.commit()
+
+def update_user(login, password, role, full_name):
+    """Меняет пароль, роль и ФИО пользователя."""
+    with Session(engine) as session:
+        user = session.scalars(select(User).where(User.login == login)).first()
+        if user is None:
+            return False
+        user.password = password
+        user.role = role
+        user.full_name = full_name
+        session.commit()
+        return True
+
+def delete_user(login):
+    """Удаляет пользователя."""
+    with Session(engine) as session:
+        user = session.scalars(select(User).where(User.login == login)).first()
+        if user is None:
+            return False
+        session.delete(user)
+        session.commit()
+        return True
+
+def register_fail(login):
+    """Добавляет попытку входа. При 3 попытках блокирует пользователя.
+    Возвращает True, если пользователь только что заблокирован.
+    """
+    with Session(engine) as session:
+        user = session.scalars(select(User).where(User.login == login)).first()
+        if user is None:
+            return False
+        user.attempts = user.attempts + 1
+        if user.attempts &gt;= 3:
+            user.is_locked = 1
+            session.commit()
+            return True
+        session.commit()
+        return False
+
+def reset_attempts(login):
+    """Сбрасывает счётчик неудачных попыток входа."""
+    with Session(engine) as session:
+        user = session.scalars(select(User).where(User.login == login)).first()
+        if user is None:
+            return False
+        user.attempts = 0
+        session.commit()
+        return True
+
+def unlock_user(login):
+    """Разблокирует пользователя и сбрасывает попытки."""
+    with Session(engine) as session:
+        user = session.scalars(select(User).where(User.login == login)).first()
+        if user is None:
+            return False
+        user.is_locked = 0
+        user.attempts = 0
+        session.commit()
+        return True
+
+# ---------------------------------------------------------------------------
+# Быстрая проверка: показать всех пользователей
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    for user in all_users():
+        print(user)</pre>
+
+<h4>Разбор</h4>
+<ul>
+  <li>Закомментированная строка с <code>postgresql+psycopg2</code> — тот же <code>DATABASE_URL</code>, но для PostgreSQL: когда курс дойдёт до серверной базы, достаточно раскомментировать её и закомментировать строку <code>sqlite</code> — больше в коде не меняется ничего.</li>
+  <li>Функция <code>_to_dict</code> превращает объект-строку в словарь для GUI и по дороге переименовывает колонки: <code>is_locked</code> становится ключом <code>locked</code>, чтобы экраны читали прежнее имя.</li>
+  <li>Каждая функция открывает собственную сессию оператором <code>with</code>: соединение закроется гарантированно, даже при ошибке.</li>
+  <li>Функции записи (<code>add_user</code>, <code>update_user</code>, <code>delete_user</code>, <code>register_fail</code>, <code>reset_attempts</code>, <code>unlock_user</code>) завершаются <code>session.commit()</code>; функциям чтения (<code>all_users</code>, <code>find_user</code>, <code>user_by_login</code>) <code>commit</code> не нужен.</li>
+  <li>В конце файла — встроенная самопроверка: при прямом запуске модель печатает всех пользователей. Это самый быстрый способ убедиться, что база подключилась.</li>
+</ul>
+
+<h3>4.4. app.py: интерфейс остаётся прежним</h3>
+
+<p>Файл <code>app.py</code> в этой работе не приводится: интерфейс не изменился со времён модуля 4, поэтому берите его оттуда в готовом виде — те же экраны, та же капча-пазл, те же константы цветов и строители виджетов.</p>
+
+<p>Менять не придётся ни одной строки: все функции, которые импортирует интерфейс — <code>find_user</code>, <code>add_user</code>, <code>unlock_user</code> и остальные, — остались в новой модели под теми же именами. Сам интерфейс к базе не обращается ни разу: в нём нет ни <code>select</code>, ни <code>commit</code>, ни импорта <code>sqlalchemy</code>.</p>
+
+<h3>4.5. Шаг 18–19. Запуск и проверка</h3>
+
+<div class="step">
+  <span class="t">Шаг 18. Проверьте модель без окна</span>
+  <p>В активированном окружении выполните <code>python models.py</code>. Модель напечатает словари всех пользователей таблицы <code>Users</code> — как минимум базового администратора:</p>
+<pre>{'id': 1, 'login': 'admin', 'password': 'admin', 'role': 'Администратор',
+ 'full_name': 'Администратор Системы', 'locked': False, 'attempts': 0}</pre>
+  <p>Пустой список или ошибка на этой строке означают, что модель не дошла до базы: проверьте, что <code>app.db</code> лежит рядом с <code>models.py</code>, а таблица <code>Users</code> создана скриптом раздела 3.6.</p>
+</div>
+
+<div class="step">
+  <span class="t">Шаг 19. Запустите приложение и проверьте запись в базу</span>
+  <p>Выполните <code>python app.py</code>, соберите капчу и войдите парой <code>admin / admin</code>. Добавьте пользователя кнопкой «Добавить», измените ФИО через «Изменить», при желании разблокируйте <code>ivanov</code>. Затем откройте <code>app.db</code> в SQLite Browser и посмотрите таблицу <code>Users</code>: все операции видны в таблице. Данные живут в файле, а не в памяти программы: после перезапуска приложение снова их видит — того, чего список-заглушка дать не могла.</p>
+</div>
+
+<div class="box check">
+  <span class="t">ПРОВЕРЬТЕ СЕБЯ ПО МОДУЛЮ БД-2</span>
+  <ul>
+    <li><code>python models.py</code> печатает как минимум одного пользователя — <code>admin</code>.</li>
+    <li>Вход <code>admin / admin</code> открывает панель администратора, и таблица показывает строки таблицы <code>Users</code>.</li>
+    <li>Добавленный пользователь виден и в таблице интерфейса, и в SQLite Browser.</li>
+    <li>Изменение ФИО и роли сохраняется после перезапуска приложения.</li>
+    <li>Кнопка «Разблокировать» обнуляет <code>is_locked</code> и <code>attempts</code> в таблице.</li>
+    <li>Три неверных пароля подряд ставят <code>is_locked = 1</code>, и вход отказывает сообщением «Вы заблокированы. Обратитесь к администратору».</li>
+    <li>Удаление убирает строку из базы; удаление <code>admin</code> запрещено.</li>
+    <li>В <code>models.py</code> нет ни одной строки с <code>tkinter</code>, в <code>app.py</code> — ни <code>select</code>, ни <code>commit</code>.</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="s4">5. Модуль БД-3. Создание запроса: полная стоимость заказа</h2>
+
+<p>В модулях БД-1 и БД-2 мы собрали базу и подключили к ней приложение. Модуль БД-3 — это один SQL-запрос, зато самый тяжёлый в курсе: экзамен требует посчитать полную стоимость заказа покупателя.</p>
+
+<p>Формулировка: запрос учитывает <b>количество продукции в заказе</b> и <b>стоимость всех материалов и технологических операций</b>, израсходованных на производство этой продукции, <b>с учётом нормы расхода</b>.</p>
+
+<h3>5.1. Из каких таблиц складывается стоимость</h3>
+
+<p>Заказ (<code>Orders</code>) состоит из строк состава (<code>Order_items</code>): какая продукция и в каком количестве заказана. Сама продукция в этой задаче деньгами не оценена: её стоимость складывается из материалов и технологических операций, потраченных на производство. Сколько единиц каждого материала и операции уходит на единицу продукции — говорит спецификация (<code>Specification</code>, колонка <code>qty</code> и есть норма расхода). Почём каждая единица материала и операции — знает таблица <code>Prices</code>: операции лежат в <code>Materials</code> с типом «Операция», а цены на них — в <code>Prices</code> строками с <code>material_id</code>, вместе с ценами материалов.</p>
+
+<table>
+  <tr><th>Ступень расчёта</th><th>Таблица</th><th>Поле</th></tr>
+  <tr><td>Что и в каком количестве заказано</td><td><code>Order_items</code></td><td><code>quantity</code></td></tr>
+  <tr><td>Сколько единиц материала или операции уходит на единицу продукции (норма расхода)</td><td><code>Specification</code></td><td><code>qty</code></td></tr>
+  <tr><td>Сколько стоит единица материала или операции</td><td><code>Prices</code></td><td><code>price</code></td></tr>
+  <tr><td>Стоимость строки заказа</td><td colspan="2"><code>quantity × qty × price</code></td></tr>
+  <tr><td>Полная стоимость заказа</td><td colspan="2">сумма стоимостей строк по заказу</td></tr>
+</table>
+
+<div class="box tip">
+  <span class="t">ДВЕ МЫСЛИ, КОТОРЫЕ ВСЁ УПРОЩАЮТ</span>
+  <p><b>Первая.</b> Технологические операции не требуют отдельной ветки расчёта: они лежат в тех же таблицах <code>Specification</code> и <code>Prices</code>, что и материалы, и попадают в сумму автоматически.</p>
+  <p><b>Вторая.</b> Строки таблицы <code>Prices</code>, у которых заполнен <code>product_id</code> (цена самого товара), в этом запросе не участвуют: заказ оценивается по составу, а не по прайсу. Отсюда условие <code>p.product_id IS NULL</code> в соединении — оно отбирает только строки цен материалов и операций.</p>
+</div>
+
+<h3>5.2. Собираем запрос по слоям</h3>
+
+<p>Самый надёжный способ понять запрос — собрать его из трёх кусков: сначала себестоимость одной единицы изделия, потом стоимость строки заказа, потом итог по заказу.</p>
+
+<h4>Слой 1. Себестоимость одной единицы изделия</h4>
+<p>Берём спецификацию изделия, к каждой строке подтягиваем цену материала или операции и перемножаем.</p>
+<pre>SELECT
+    s.product_id,
+    SUM(s.qty * p.price) AS unit_cost      -- себестоимость 1 изделия
+FROM Specification s
+JOIN Prices p ON p.material_id = s.material_id
+WHERE p.product_id IS NULL                 -- только цены материалов и операций
+GROUP BY s.product_id;</pre>
+<p>Результат — по одной строке на изделие, в колонке <code>unit_cost</code> — во сколько обходится производство одной штуки.</p>
+
+<h4>Слой 2. Стоимость строки заказа</h4>
+<p>Умножаем себестоимость единицы на количество, которое заказали.</p>
+<pre>oi.quantity * unit_cost</pre>
+
+<h4>Слой 3. Полная стоимость заказа</h4>
+<p>Складываем стоимости всех строк одного заказа и сворачиваем по заказу.</p>
+<pre>GROUP BY oi.order_id</pre>
+
+<p>Всё вместе — это один запрос. Подзапросы ему не нужны: три соединения и <code>GROUP BY</code>.</p>
+
+<h3>5.3. Шаг 20. Итоговый запрос</h3>
+
+<div class="step">
+  <span class="t">Выполните запрос на вкладке Execute SQL</span>
+  <p>В результате придёт по одной строке на заказ, а в колонке <code>total_cost</code> будет стоять полная стоимость этого заказа.</p>
+<pre>SELECT
+    oi.order_id,
+    SUM(oi.quantity * s.qty * p.price) AS total_cost
+FROM Order_items oi
+JOIN Specification s ON s.product_id = oi.product_id
+JOIN Prices p        ON p.material_id = s.material_id
+WHERE p.product_id IS NULL
+GROUP BY oi.order_id
+ORDER BY oi.order_id;</pre>
+</div>
+
+<h3>5.4. Разбор по строкам</h3>
+
+<table>
+  <tr><th>Строка запроса</th><th>Что делает</th></tr>
+  <tr><td><code>FROM Order_items oi</code></td><td>Стартуем от строк состава заказа: в них уже есть и номер заказа, и количество, поэтому таблица <code>Orders</code> не нужна.</td></tr>
+  <tr><td><code>JOIN Specification s</code></td><td>Разворачивает каждое изделие в его материалы и операции с нормой расхода. Строк станет много — это нормально: на каждое сочетание «строка заказа — материал» своя строка.</td></tr>
+  <tr><td><code>JOIN Prices p</code></td><td>Приносит цену материала или операции.</td></tr>
+  <tr><td><code>WHERE p.product_id IS NULL</code></td><td>Отсекает прайсовые строки товаров: считаем только по составу, а не по прайсу.</td></tr>
+  <tr><td><code>SUM(oi.quantity * s.qty * p.price)</code></td><td>Три множителя — количество изделий в заказе, норма расхода на единицу и цена единицы. Их произведение и есть вклад строки в итог.</td></tr>
+  <tr><td><code>GROUP BY oi.order_id</code></td><td>Сворачивает все строки одного заказа в одну, <code>SUM</code> складывает вклады.</td></tr>
+</table>
+
+<div class="box tip">
+  <span class="t">ПОЧЕМУ КОРОЧЕ УЖЕ НЕЛЬЗЯ</span>
+  <p>Заказ знает количество, но не состав изделия. Состав знает нормы, но не цены. Цены лежат в отдельной таблице. Поэтому три соединения — это минимум пути от количества до цены, и каждая строка запроса закрывает один разрыв между таблицами. Убрать любое из них — значит потерять либо количество, либо норму, либо цену.</p>
+</div>
+
+<div class="box tip">
+  <span class="t">КАК ЧИТАТЬ ЛЮБОЙ ЗАПРОС СО СВЁРТКОЙ</span>
+  <p>Читайте запрос в порядке: <b>FROM и JOIN</b> — из каких таблиц разворачиваем данные; <b>WHERE</b> — что отсекаем; <b>GROUP BY</b> — по чему сворачиваем; <b>SUM</b> и другие агрегаты — что складываем. Ошибка в любом из четырёх мест видна сразу: неверный JOIN даёт лишние строки, неверный GROUP BY — лишние группы, забытое условие в WHERE — завышенную сумму.</p>
+</div>
+
+<h3>5.5. Пример расчёта до копейки</h3>
+
+<p>Разберём один заказ целиком. <b>Заказ 1</b>: заказчик <code>000000002</code> («ООО Кинотеатр Квант»), дата <code>2026-04-22</code>, статус «В работе». В составе заказа — изделие <code>1</code> («Стол кухонный „Самобранка“») в количестве <b>2</b> штук.</p>
+
+<p>Смотрим спецификацию изделия 1 и подтягиваем к ней цены:</p>
+
+<table>
+  <tr><th>Материал / операция</th><th>id</th><th>Тип</th><th>Норма <code>qty</code></th><th>Цена</th><th>Норма × цена</th></tr>
+  <tr><td>Евровинт 6,5х5</td><td>1</td><td>Материал</td><td>0,012</td><td>432,083333</td><td>5,185</td></tr>
+  <tr><td>Мебельная деталь 500х800</td><td>2</td><td>Материал</td><td>2,0</td><td>37,50</td><td>75,00</td></tr>
+  <tr><td>Мебельная деталь 600х800</td><td>3</td><td>Материал</td><td>4,0</td><td>17,125</td><td>68,50</td></tr>
+  <tr><td>Опора</td><td>4</td><td>Материал</td><td>4,0</td><td>145,71875</td><td>582,875</td></tr>
+  <tr><td>Столешница круглая</td><td>5</td><td>Материал</td><td>1,0</td><td>1 242,50</td><td>1 242,50</td></tr>
+  <tr><td>Распил ДСП, МДФ и листового материала</td><td>6</td><td>Операция</td><td>1,0</td><td>450,00</td><td>450,00</td></tr>
+  <tr><td>Сборка модулей</td><td>7</td><td>Операция</td><td>1,0</td><td>1 400,00</td><td>1 400,00</td></tr>
+  <tr><td>Упаковка</td><td>8</td><td>Операция</td><td>1,0</td><td>1 900,00</td><td>1 900,00</td></tr>
+  <tr><th colspan="5">Себестоимость одной штуки</th><th>5 724,06</th></tr>
+</table>
+
+<p>Стоимость строки заказа: <code>2 × 5 724,06 = 11 448,12</code>. Поскольку в заказе 1 одна строка состава, полная стоимость заказа — <b>11 448,12</b>. Именно это число должно появиться в колонке <code>total_cost</code> для <code>order_id = 1</code>.</p>
+
+<div class="box warn">
+  <span class="t">ВНИМАНИЕ К ЧИСЛАМ</span>
+  <p>Здесь приведён расчёт по демонстрационному набору данных. В вашем наборе значения цен и норм могут отличаться — важно не число, а <b>путь его получения</b>: норма × цена, сумма по изделию, умножение на количество.</p>
+</div>
+
+<h3>5.6. Шаг 21. Сверка: разложить заказ на строки</h3>
+
+<p>Прежде чем сдавать запрос, убедитесь, что итог сходится с ручным подсчётом. Этот запрос показывает каждую составляющую стоимости по заказу:</p>
+
+<pre>SELECT
+    oi.order_id,
+    oi.product_id,
+    s.material_id,
+    m.name AS material_name,
+    m.type AS material_type,
+    s.qty  AS norm,
+    p.price,
+    oi.quantity AS ordered,
+    oi.quantity * s.qty * p.price AS line_cost
+FROM Order_items oi
+JOIN Specification s ON s.product_id  = oi.product_id
+JOIN Materials     m ON m.id          = s.material_id
+JOIN Prices        p ON p.material_id = s.material_id
+WHERE oi.order_id = 1
+ORDER BY s.material_id;</pre>
+
+<p>Сложите колонку <code>line_cost</code> — сумма должна совпасть с <code>total_cost</code> из итогового запроса до копейки.</p>
+
+<div class="box warn">
+  <span class="t">КОНТРОЛЬНЫЙ ВОПРОС СЕБЕ</span>
+  <p>А что если у какого-то товара из заказа <b>вообще нет строк в спецификации</b>? Тогда <code>JOIN Specification</code> выбросит эту строку из результата, и стоимость заказа молча занизится. Проверить такие товары можно так:</p>
+<pre>SELECT DISTINCT oi.product_id
+FROM Order_items oi
+WHERE NOT EXISTS (SELECT 1 FROM Specification s
+                  WHERE s.product_id = oi.product_id);</pre>
+  <p>Пусто — хорошо. Если что-то вернулось, обязательно упомяните это в отчёте. Если по заданию такие товары должны учитываться как 0, замените <code>JOIN Specification</code> на <code>LEFT JOIN</code> и оберните произведение в <code>COALESCE(…, 0)</code>.</p>
+</div>
+
+<h3>5.7. Шаг 22. Сохраните запрос и перенесите ответ</h3>
+
+<p>Сохраните текст запроса в файл: <b>File → Save SQL as…</b> Этот файл сдаётся вместе с работой. Затем перейдите к заданию 3.1 в тестирующей системе, вставьте текст запроса в поле приложения <b>SQL_Autotest</b>, нажмите <b>Выполнить</b> и скопируйте значение из поля «Контрольная сумма» в поле ответа. Формат ответа: <code>M3_SQL-XXXXX</code>.</p>
+
+<div class="box check">
+  <span class="t">ПРОВЕРЬТЕ СЕБЯ ПО МОДУЛЮ БД-3</span>
+  <ul>
+    <li>Запрос возвращает по одной строке на заказ, в колонке <code>total_cost</code> — число.</li>
+    <li>Проверочный запрос из раздела 5.6 по заказу 1 складывается в то же число.</li>
+    <li>Запрос «товары без спецификации» возвращает пусто (или случай зафиксирован в отчёте).</li>
+    <li>В запросе ровно три таблицы и <code>GROUP BY</code> по <code>order_id</code>.</li>
+    <li>Текст запроса сохранён в отдельный файл.</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2 id="s5">6. Типичные ошибки и как их читать</h2>
+
+<p>Traceback читается <b>снизу вверх</b>: последняя строка — тип и сообщение ошибки, строки выше — путь к месту.</p>
+
+<table>
+  <tr><th>Сообщение или симптом</th><th>Причина</th><th>Как исправить</th></tr>
+  <tr><td><code>no such column: user_id</code></td><td>В CSV из <code>Заказчики.json</code> нет колонки <code>user_id</code></td><td>Выполните <code>ALTER TABLE Customers ADD COLUMN user_id INTEGER;</code> перед переливкой (раздел 3.7)</td></tr>
+  <tr><td><code>no such column: address</code></td><td>В CSV колонка называется <code>addres</code></td><td>Используйте имя <code>addres</code> — так, как в файле</td></tr>
+  <tr><td><code>no such column: src_id</code></td><td>Колонки <code>src_id</code> нет в исходном файле</td><td>Уберите её из <code>CREATE</code>, <code>INSERT</code> и <code>SELECT</code></td></tr>
+  <tr><td><code>UNIQUE constraint failed: Products.id</code></td><td>Дубль первичного ключа в исходных данных</td><td>Найдите запросом 1 из раздела 3.5, зафиксируйте в отчёте, покажите преподавателю</td></tr>
+  <tr><td><code>FOREIGN KEY constraint failed</code> на шаге 7 или 8 скрипта</td><td>В <code>Prices</code>/<code>Sales</code> есть ссылка на товар или материал, которого нет</td><td>Найдите запросом 3 из раздела 3.5, зафиксируйте в отчёте</td></tr>
+  <tr><td><code>foreign key mismatch</code></td><td>Имя родительской таблицы или колонки в <code>REFERENCES</code> написано с опечаткой</td><td>Сверьте имена с вкладкой <b>Database Structure</b> и выполните скрипт заново</td></tr>
+  <tr><td>Вопросительные знаки вместо кириллицы</td><td>CSV импортирован не в UTF-8</td><td>Удалите таблицу и импортируйте заново с <b>Encoding = UTF-8</b></td></tr>
+  <tr><td>Цены сортируются неверно: <code>1000</code> раньше <code>200</code></td><td>Колонка осталась текстовой</td><td>Поставьте тип <code>REAL</code> или <code>INTEGER</code> в структуре (раздел 3.7)</td></tr>
+  <tr><td><code>000000001</code> превратилось в <code>1</code>, заказы потеряли заказчиков</td><td>CSV открывали в Excel</td><td>Пересоздайте CSV из JSON и не открывайте его в табличных редакторах; колонка <code>id</code> в <code>Customers</code> должна иметь тип <code>TEXT</code></td></tr>
+  <tr><td><code>cannot start a transaction within a transaction</code></td><td>Скрипт с <code>BEGIN;</code> вставлен в редактор, который уже открыл свою транзакцию</td><td>Уберите <code>BEGIN</code>/<code>COMMIT</code> из вставляемого текста — они нужны только при запуске через консоль <code>sqlite3</code></td></tr>
+  <tr><td><code>ModuleNotFoundError: No module named 'sqlalchemy'</code></td><td>Окружение не активировано или пакет поставлен в системный Python</td><td>Активируйте <code>venv</code> и повторите <code>pip install sqlalchemy</code></td></tr>
+  <tr><td><code>NoSuchTableError: Users</code> / <code>no such table: Users</code></td><td>Таблица <code>Users</code> не создана либо <code>app.db</code> лежит не в папке проекта</td><td>Выполните скрипт раздела 3.6; сверьте путь в <code>DATABASE_URL</code></td></tr>
+  <tr><td><code>sqlite3.OperationalError: database is locked</code></td><td>База открыта на редактирование в SQLite Browser</td><td>Нажмите <b>Write Changes</b> или закройте проект через <b>File → Close Project</b> и повторите действие</td></tr>
+  <tr><td>«Вы заблокированы…» при первом же запуске</td><td>В базе остались <code>attempts</code> и <code>is_locked</code> с прошлых попыток</td><td>Разблокируйте через экран администратора или оператором <code>UPDATE Users SET is_locked = 0, attempts = 0;</code></td></tr>
+  <tr><td><code>ModuleNotFoundError: No module named 'models'</code></td><td><code>models.py</code> лежит не в той папке, что <code>app.py</code></td><td>Положите <code>models.py</code>, <code>app.py</code> и <code>app.db</code> в одну папку проекта</td></tr>
+  <tr><td>Запрос модуля БД-3 вернул пустоту или <code>NULL</code></td><td>У товара нет строк в <code>Specification</code> либо у его материалов нет строк с ценами в <code>Prices</code></td><td>Проверьте запросами из разделов 5.6 и 3.5</td></tr>
+</table>
+
+<hr>
+
+<h2 id="s6">7. Приложения</h2>
+
+<h3>Приложение А. Что нужно сдать</h3>
+<table>
+  <tr><th>Задание</th><th>Что сдаём</th><th>Имя файла / формат ответа</th></tr>
+  <tr><td>1.1</td><td>ER-диаграмма</td><td><code>ER_diagram.pdf</code></td></tr>
+  <tr><td>2.1</td><td>Дамп базы данных</td><td><code>database_sys.zip</code> (внутри <code>.sql</code>)</td></tr>
+  <tr><td>2.2</td><td>Контрольная сумма приложения <b>Data_Autotest</b></td><td><code>M2_DB-XXXXX</code></td></tr>
+  <tr><td>3.1</td><td>Контрольная сумма приложения <b>SQL_Autotest</b></td><td><code>M3_SQL-XXXXX</code></td></tr>
+</table>
+
+<p class="small">Дамп базы в SQLite Browser делается так: <b>File → Export → Database to SQL file…</b> В полученном <code>.sql</code> будут и <code>CREATE TABLE</code>, и <code>INSERT</code> со всеми данными, и <code>BEGIN TRANSACTION; … COMMIT;</code> — это нормально: дамп восстанавливают целиком, а не вставляют в редактор.</p>
+
+<h3>Приложение Б. Сводка всего SQL по порядку выполнения</h3>
+<ol>
+  <li>Проверка исходных данных — раздел 3.5, запросы 1–4.</li>
+  <li>Создание <code>Users</code> и базового пользователя — раздел 3.6.</li>
+  <li>Пересоздание восьми таблиц — раздел 3.7.</li>
+  <li>Проверка целостности — раздел 3.8.</li>
+  <li>Индексы — раздел 3.9.</li>
+  <li>Итоговый запрос — раздел 5.3, сверка — раздел 5.6.</li>
+</ol>
+
+<h3>Приложение В. Вопросы для самопроверки</h3>
+
+<h4>Модуль БД-1</h4>
+<ol>
+  <li>Почему колонка <code>Customers.id</code> объявлена как <code>TEXT</code>, а не <code>INTEGER</code>?
+    <p class="small"><i>Ответ:</i> значения вида <code>000000001</code> содержат ведущие нули; при переводе в число они обрежутся, и связь «заказ → заказчик» развалится.</p></li>
+  <li>Что произойдёт, если объявить <code>Orders.customer_id</code> как <code>INTEGER</code>, а <code>Customers.id</code> оставить <code>TEXT</code>?
+    <p class="small"><i>Ответ:</i> SQLite начнёт сравнивать числа со строками; соединение таблиц либо даст пустой результат, либо ошибку в момент создания ключа.</p></li>
+  <li>Зачем в <code>Prices</code> ограничение «заполнена ровно одна из двух колонок»?
+    <p class="small"><i>Ответ:</i> одна строка цены относится либо к товару, либо к материалу/операции. Если заполнить обе, непонятно, к чему относится цена; если ни одной — строка бессмысленна.</p></li>
+  <li>Почему таблица <code>Users</code> создаётся после импорта, а не до него?
+    <p class="small"><i>Ответ:</i> так порядок операций проще: сначала все данные, потом служебная таблица. Внешний ключ <code>Customers.user_id → Users.id</code> добавляется при пересоздании <code>Customers</code>, к этому моменту <code>Users</code> уже существует.</p></li>
+  <li>Правило <code>RESTRICT</code> стоит на <code>Specification.material_id</code>. Что произойдёт при попытке удалить материал, который используется в спецификации?
+    <p class="small"><i>Ответ:</i> SQLite откажет с <code>FOREIGN KEY constraint failed</code>. Сначала нужно убрать строки спецификации, ссылающиеся на этот материал.</p></li>
+</ol>
+
+<h4>Модуль БД-2</h4>
+<ol start="6">
+  <li>Почему после <code>session.add(...)</code> обязательно нужен <code>session.commit()</code>?
+    <p class="small"><i>Ответ:</i> без фиксации изменения останутся в сессии и не попадут в файл базы; при закрытии сессии они потеряются.</p></li>
+  <li>Что делает строка <code>__table__ = Table("Users", Base.metadata, autoload_with=engine)</code>?
+    <p class="small"><i>Ответ:</i> читает структуру готовой таблицы <code>Users</code> прямо из базы и связывает её с классом <code>User</code>, избавляя от ручного описания колонок.</p></li>
+  <li>Почему <code>app.py</code> не пришлось править?
+    <p class="small"><i>Ответ:</i> интерфейс работает только с именами функций и возвращаемыми словарями, а они не изменились. Это и есть разделение ответственности.</p></li>
+</ol>
+
+<h4>Модуль БД-3</h4>
+<ol start="9">
+  <li>Почему в запросе нужен <code>GROUP BY oi.order_id</code>?
+    <p class="small"><i>Ответ:</i> после соединений на один заказ приходится много строк (по одной на каждый материал и операцию). Группировка сворачивает их в одну строку на заказ, а <code>SUM</code> складывает вклады.</p></li>
+  <li>Что случится, если убрать <code>WHERE p.product_id IS NULL</code>?
+    <p class="small"><i>Ответ:</i> при определённой структуре данных соединение может поймать прайсовые строки товаров. Условие явно говорит, что считаем только состав, а не прайс. В нашей схеме его роль дублирует ограничение <code>CHECK</code> в <code>Prices</code>, но писать его всё равно полезно — запрос становится однозначным.</p></li>
+  <li>Нужно ли отдельно учитывать технологические операции?
+    <p class="small"><i>Ответ:</i> нет. Операции лежат в <code>Materials</code> с типом «Операция», их цены — в <code>Prices</code> по <code>material_id</code>. Они попадают в ту же сумму, что и материалы.</p></li>
+  <li>Запрос вернул пустоту. С чего начать поиск причины?
+    <p class="small"><i>Ответ:</i> с проверки «товары из заказов без спецификации» (раздел 5.6) и с проверки, что у материалов из спецификации есть строки в <code>Prices</code>.</p></li>
+</ol>
+
+<hr>
+
+<p class="small">Конец документа. Модули БД-1, БД-2, БД-3 — учебная версия практической работы.</p>
+
+</div>
+</body>
+</html>
